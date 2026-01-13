@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"net"
@@ -27,15 +28,31 @@ const (
 )
 
 func main() {
+	// Parse flags
+	urlFlag := flag.String("url", "", "Connection URL (e.g., enjoys://tcp-chat@127.0.0.1:8888)")
+	flag.Parse()
+
+	address := "localhost:8888"
+	if *urlFlag != "" {
+		// Parse enjoys://tcp-chat@ip:port
+		cleanUrl := strings.TrimSpace(*urlFlag)
+		if strings.HasPrefix(cleanUrl, "enjoys://tcp-chat@") {
+			address = strings.TrimPrefix(cleanUrl, "enjoys://tcp-chat@")
+		} else {
+			fmt.Printf("%sInvalid URL format. usage: enjoys://tcp-chat@ip:port%s\n", ColorRed, ColorReset)
+			os.Exit(1)
+		}
+	}
+
 	// Connect to server
-	conn, err := net.Dial("tcp", "localhost:8888")
+	conn, err := net.Dial("tcp", address)
 	if err != nil {
-		fmt.Printf("%sFailed to connect: %v%s\n", ColorRed, err, ColorReset)
+		fmt.Printf("%sFailed to connect to %s: %v%s\n", ColorRed, address, err, ColorReset)
 		os.Exit(1)
 	}
 	defer conn.Close()
 
-	fmt.Println(ColorCyan + "Connected to TCP Chat Server" + ColorReset)
+	fmt.Printf("%sConnected to TCP Chat Server at %s%s\n", ColorCyan, address, ColorReset)
 	fmt.Println(ColorCyan + "=====================================" + ColorReset)
 
 	var wg sync.WaitGroup

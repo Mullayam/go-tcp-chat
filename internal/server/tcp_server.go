@@ -99,7 +99,8 @@ func (s *TCPServer) handleConnection(conn net.Conn) {
 
 	// Send welcome message
 	sess.Send(protocol.NewSystemMessage("Welcome to TCP Chat Server!").Format())
-	sess.Send(protocol.NewSystemMessage("Please enter your email and authenticate to continue").Format())
+	sess.Send(protocol.NewSystemMessage("Please authenticate to continue.").Format())
+	sess.Send(protocol.NewSystemMessage("Enter your email address below").Format())
 
 	// Start authentication flow
 	if err := s.authenticate(sess); err != nil {
@@ -128,13 +129,12 @@ func (s *TCPServer) handleConnection(conn net.Conn) {
 
 // authenticate handles the authentication flow
 func (s *TCPServer) authenticate(sess *session.Session) error {
-	// Request email
-	sess.Send("\nEnter your email address: ")
-	email, err := s.readLine(sess)
+	// Read email (prompt already sent)
+	email, err := s.readNonEmptyLine(sess)
 	if err != nil {
 		return err
 	}
-
+	sess.Send(protocol.NewSystemMessage("Please wait while we verify your email address...").Format())
 	email = strings.TrimSpace(email)
 	if !s.isValidEmail(email) {
 		return fmt.Errorf("invalid email address")
@@ -158,8 +158,8 @@ func (s *TCPServer) authenticate(sess *session.Session) error {
 	sess.Send(protocol.NewSystemMessage("OTP sent to your email. Please check your inbox.").Format())
 
 	// Request OTP
-	sess.Send("\nEnter OTP code: ")
-	otpCode, err := s.readLine(sess)
+	sess.Send(protocol.NewSystemMessage("Enter OTP code:").Format())
+	otpCode, err := s.readNonEmptyLine(sess)
 	if err != nil {
 		return err
 	}
@@ -172,9 +172,11 @@ func (s *TCPServer) authenticate(sess *session.Session) error {
 		return err
 	}
 
+	sess.Send(protocol.NewSystemMessage("OTP verified successfully!").Format())
+
 	// Request username
-	sess.Send("\nEnter username (3-16 characters, alphanumeric + underscore): ")
-	username, err := s.readLine(sess)
+	sess.Send(protocol.NewSystemMessage("Enter username (3-16 characters, alphanumeric + underscore): ").Format())
+	username, err := s.readNonEmptyLine(sess)
 	if err != nil {
 		return err
 	}
@@ -192,6 +194,7 @@ func (s *TCPServer) authenticate(sess *session.Session) error {
 	}
 
 	sess.SetState(session.StateAuthenticated)
+	sess.Send(protocol.NewSystemMessage(fmt.Sprintf("Welcome, %s!", username)).Format())
 	return nil
 }
 
@@ -217,6 +220,20 @@ func (s *TCPServer) handleMessages(sess *session.Session) {
 				return
 			}
 			log.Printf("Error routing message from %s: %v", sess.GetUsername(), err)
+		}
+	}
+}
+
+// readNonEmptyLine reads a line and skips empty lines
+func (s *TCPServer) readNonEmptyLine(sess *session.Session) (string, error) {
+	for {
+		line, err := s.readLine(sess)
+		if err != nil {
+			return "", err
+		}
+		line = strings.TrimSpace(line)
+		if line != "" {
+			return line, nil
 		}
 	}
 }

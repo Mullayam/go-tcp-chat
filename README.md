@@ -79,27 +79,46 @@ go run cmd/server/main.go
 Or build and run:
 
 ```bash
-go build -o chat-server cmd/server/main.go
-./chat-server
+go build -o bin/chat-server.exe cmd/server/main.go
+./bin/chat-server.exe
+```
+
+## Running the Client
+
+### 1. Standard Client (CLI)
+
+```bash
+go run cmd/client/main.go
+# or
+go build -o bin/chat-client.exe cmd/client/main.go
+./bin/chat-client.exe
+```
+
+### 2. TUI Client (Advanced UI)
+
+```bash
+go run cmd/client-tui/main.go
+# or
+go build -o bin/chat-client-tui.exe cmd/client-tui/main.go
+./bin/chat-client-tui.exe
 ```
 
 ## Connecting to the Server
 
-You can connect using any TCP client. Examples:
+You can connect using the default `localhost:8888` or specify a custom URL:
 
-### Using Telnet
+```bash
+./bin/chat-client.exe --url enjoys://tcp-chat@127.0.0.1:8888
+./bin/chat-client-tui.exe --url enjoys://tcp-chat@192.168.1.50:9000
+```
+
+### Using Telnet/Netcat
 
 ```bash
 telnet localhost 8888
-```
-
-### Using Netcat
-
-```bash
+# or
 nc localhost 8888
 ```
-
-### Using a Custom Go Client
 
 ```go
 package main
@@ -232,7 +251,6 @@ go-tcp-chat/
 ## Limitations
 
 - **In-Memory Only** - All data is lost on server restart
-- **No Message History** - Messages are not stored or logged
 - **Single Server** - Not designed for horizontal scaling
 - **No Encryption** - TCP connections are not encrypted (use SSH tunneling for production)
 
